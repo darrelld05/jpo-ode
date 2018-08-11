@@ -3,6 +3,7 @@ package us.dot.its.jpo.ode.services.asn1;
 import java.util.HashMap;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,9 +146,19 @@ public class Asn1EncodedDataRouter extends AbstractSubscriberProcessor<String, S
             String signedResponse = asn1CommandManager.sendForSignature(base64EncodedTim );
    
             try {
+               JSONObject jsonResponse = JsonUtils.toJSONObject(signedResponse);
+               try {
+                  String error = jsonResponse.getString("error");
+                  logger.error("Error signing data: {}", error);
+                  
+                  String warn = jsonResponse.getString("warn");
+                  logger.warn("Warning signing data: {}", warn);
+               } catch (JSONException e) {
+                  // DO nothing as there are no errors or warnings in the response
+               }
                hexEncodedTim = CodecUtils.toHex(
                   CodecUtils.fromBase64(
-                     JsonUtils.toJSONObject(signedResponse).getString("result")));
+                     jsonResponse.getString("result")));
             } catch (JsonUtilsException e1) {
                logger.error("Unable to parse signed message response {}", e1);
             }
